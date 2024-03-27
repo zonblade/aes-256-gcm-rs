@@ -3,7 +3,7 @@
 Inspired by simplicity of (let's say JWT) this crate provide high-level
 abstraction for AES-GCM Crate with some enhancement such as expiration check
 
-> **notes** : if you want to use os environment for "SINGLE" key management
+> **notes** : if you want to use os environment for "SINGLE" key management,
 > you can use `AES_GCM_SECRET` env key
 
 `WARNING : IN PRODUCTION DO NOT LEAVE SECRET EMPTY, AVOID AT ANY COSTS`
@@ -102,5 +102,5 @@ thread or async it's better to do best-practice of data sharing.
 
 if you're integrating to some kind of framework, try to understand how their data sharing works.
 
-> for other example please visit [example](https://github.com/zonblade/aes-256-gcm-rs/example)
+> for other example please visit [example](https://github.com/zonblade/aes-256-gcm-rs/example)\
 > i'm opening to anyone want to contribute either example or crate improvement.
