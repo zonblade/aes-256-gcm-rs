@@ -1,0 +1,20 @@
+[package]
+name = "aes-256-gcm"
+version = "0.1.2"
+edition = "2021"
+description = "Implementation of AES-GCM (Aes 256 Gcm) with some enhancement"
+authors = ["ZonBlade"]
+readme = "../README.md"
+repository = "https://github.com/zonblade/aes-256-gcm-rs"
+license = "MIT"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+default = []
+
+[dependencies]
+aes-gcm = "0.10.3"
+chrono = "0.4.35"
+serde = {version = "1.0.193" , features = ["derive"]}
+serde_json = "1.0.108"
