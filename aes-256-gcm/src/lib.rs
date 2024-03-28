@@ -76,10 +76,16 @@ pub struct Client {
 
 impl Client {
     pub fn new<'a>(secret: impl Into<Option<&'a str>>) -> Self {
-        let mut aes_secret = std::env::var("AES_GCM_SECRET").unwrap_or_else(|_| "".to_string());
-        if let Some(key) = secret.into() {
-            aes_secret = key.to_string();
-        }
+        
+        let mut aes_secret = std::env::var("AES_GCM_SECRET").expect(
+            "AES GCM Secret Must Present! either use AES_GCM_SECRET os ENV or fill the Client::new(secret) parameter"
+        );
+
+        let data :Option<&'a str>= secret.into();
+
+        if let Some(data) = data {
+            aes_secret = data.to_string();
+        };
 
         let mut aes_secret = aes_secret.as_bytes().to_vec();
         if aes_secret.len() > 32 {
@@ -242,6 +248,7 @@ mod tests {
     /// 
     #[test]
     fn test_case_1() {
+        std::env::set_var("AES_GCM_SECRET", "some key");
         let client = Client::new(None);
         let encrypted = client.encrypt("my thing", None);
         let decrypted: String = client.decrypt(&encrypted.unwrap()).unwrap();
@@ -254,6 +261,7 @@ mod tests {
     /// 
     #[test]
     fn test_case_2() {
+        std::env::set_var("AES_GCM_SECRET", "some key");
         #[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq)]
         struct TestCase2 {
             pub name: String,
@@ -275,6 +283,7 @@ mod tests {
     /// 
     #[test]
     fn test_case_3() {
+        std::env::set_var("AES_GCM_SECRET", "some key");
         let client = Client::new(None);
         let encrypted = client.encrypt("my thing", AesOptions::with_expire_second(3).build());
         // sleep 5 second
@@ -293,6 +302,7 @@ mod tests {
     /// 
     #[test]
     fn test_case_4() {
+        std::env::set_var("AES_GCM_SECRET", "some key");
         let client = Client::new(None);
         let encrypted = client.encrypt("my thing", AesOptions::with_expire_second(3).build());
         // sleep 5 second
@@ -311,6 +321,7 @@ mod tests {
     /// 
     #[test]
     fn test_case_5() {
+        std::env::set_var("AES_GCM_SECRET", "some key");
         #[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq)]
         struct TestCase2 {
             pub name: String,
@@ -342,6 +353,7 @@ mod tests {
     /// 
     #[test]
     fn test_case_6() {
+        std::env::set_var("AES_GCM_SECRET", "some key");
         #[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq)]
         struct TestCase2 {
             pub name: String,
@@ -360,5 +372,31 @@ mod tests {
         } else {
             assert!(false);
         }
+    }
+
+    ///
+    /// Test case 7
+    /// secret with &str
+    /// 
+    #[test]
+    fn test_case_7() {
+        let secrets = "my secret";
+        let client = Client::new(secrets);
+        let encrypted = client.encrypt("my thing", None);
+        let decrypted: String = client.decrypt(&encrypted.unwrap()).unwrap();
+        assert_eq!(decrypted, "my thing");
+    }
+
+    ///
+    /// Test case 8
+    /// secret with String
+    /// 
+    #[test]
+    fn test_case_8() {
+        let secrets = String::from("my secret");
+        let client = Client::new(&*secrets);
+        let encrypted = client.encrypt("my thing", None);
+        let decrypted: String = client.decrypt(&encrypted.unwrap()).unwrap();
+        assert_eq!(decrypted, "my thing");
     }
 }
