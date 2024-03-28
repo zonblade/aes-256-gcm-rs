@@ -75,7 +75,7 @@ pub struct Client {
 }
 
 impl Client {
-    pub fn new(secret: impl Into<Option<&'static str>>) -> Self {
+    pub fn new<'a>(secret: impl Into<Option<&'a str>>) -> Self {
         let mut aes_secret = std::env::var("AES_GCM_SECRET").unwrap_or_else(|_| "".to_string());
         if let Some(key) = secret.into() {
             aes_secret = key.to_string();
