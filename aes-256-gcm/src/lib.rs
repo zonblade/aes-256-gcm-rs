@@ -1,9 +1,9 @@
-//! 
+//!
 //! Inspired by simplicity of (let's say JWT) this crate provide high-level
 //! abstraction for AES-GCM Crate with some enhancement such as expiration check
-//! 
+//!
 //! for detailed usage, please refer to the readme and example in the repository
-//! 
+//!
 use aes_gcm::{
     aead::{generic_array::GenericArray, Aead, KeyInit, OsRng},
     aes::{
@@ -76,15 +76,26 @@ pub struct Client {
 
 impl Client {
     pub fn new<'a>(secret: impl Into<Option<&'a str>>) -> Self {
-        
-        let mut aes_secret = std::env::var("AES_GCM_SECRET").expect(
-            "AES GCM Secret Must Present! either use AES_GCM_SECRET os ENV or fill the Client::new(secret) parameter"
-        );
+        let mut aes_secret:Option<String> = None;
 
-        let data :Option<&'a str>= secret.into();
+        let data: Option<&'a str> = secret.into();
 
-        if let Some(data) = data {
-            aes_secret = data.to_string();
+        match data {
+            Some(data) => {
+                aes_secret = Some(data.to_string());
+            }
+            None => {
+                aes_secret = Some(std::env::var("AES_GCM_SECRET").expect(
+                    "if you are not using parameter, AES_GCM_SECRET os ENV must present or fill the Client::new(secret) parameter"
+                ));
+            }
+        }
+
+        let aes_secret = match aes_secret {
+            Some(data) => data,
+            None => {
+                panic!("AES_GCM_SECRET os ENV must present or fill the Client::new(secret) parameter")
+            }
         };
 
         let mut aes_secret = aes_secret.as_bytes().to_vec();
@@ -245,7 +256,7 @@ mod tests {
     ///
     /// Test case 1 \
     /// Simple encrypt and decrypt string
-    /// 
+    ///
     #[test]
     fn test_case_1() {
         std::env::set_var("AES_GCM_SECRET", "some key");
@@ -258,7 +269,7 @@ mod tests {
     ///
     /// Test case 2 \
     /// Simple encrypt and decrypt struct
-    /// 
+    ///
     #[test]
     fn test_case_2() {
         std::env::set_var("AES_GCM_SECRET", "some key");
@@ -280,7 +291,7 @@ mod tests {
     ///
     /// Test case 3 \
     /// Simple encrypt and decrypt string with expire
-    /// 
+    ///
     #[test]
     fn test_case_3() {
         std::env::set_var("AES_GCM_SECRET", "some key");
@@ -299,7 +310,7 @@ mod tests {
     ///
     /// Test case 4 \
     /// Simple encrypt and decrypt string with expire
-    /// 
+    ///
     #[test]
     fn test_case_4() {
         std::env::set_var("AES_GCM_SECRET", "some key");
@@ -318,7 +329,7 @@ mod tests {
     ///
     /// Test case 5 \
     /// Simple encrypt and decrypt struct with expire
-    /// 
+    ///
     #[test]
     fn test_case_5() {
         std::env::set_var("AES_GCM_SECRET", "some key");
@@ -350,7 +361,7 @@ mod tests {
     ///
     /// Test case 6 \
     /// Simple encrypt and decrypt struct with expire
-    /// 
+    ///
     #[test]
     fn test_case_6() {
         std::env::set_var("AES_GCM_SECRET", "some key");
@@ -377,9 +388,11 @@ mod tests {
     ///
     /// Test case 7
     /// secret with &str
-    /// 
+    ///
     #[test]
     fn test_case_7() {
+        // remove os env
+        std::env::remove_var("AES_GCM_SECRET");
         let secrets = "my secret";
         let client = Client::new(secrets);
         let encrypted = client.encrypt("my thing", None);
@@ -390,9 +403,10 @@ mod tests {
     ///
     /// Test case 8
     /// secret with String
-    /// 
+    ///
     #[test]
     fn test_case_8() {
+        std::env::remove_var("AES_GCM_SECRET");
         let secrets = String::from("my secret");
         let client = Client::new(&*secrets);
         let encrypted = client.encrypt("my thing", None);
