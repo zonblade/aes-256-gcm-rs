@@ -76,25 +76,20 @@ pub struct Client {
 
 impl Client {
     pub fn new<'a>(secret: impl Into<Option<&'a str>>) -> Self {
-        let mut aes_secret:Option<String> = None;
-
         let data: Option<&'a str> = secret.into();
 
-        match data {
-            Some(data) => {
-                aes_secret = Some(data.to_string());
-            }
-            None => {
-                aes_secret = Some(std::env::var("AES_GCM_SECRET").expect(
-                    "if you are not using parameter, AES_GCM_SECRET os ENV must present or fill the Client::new(secret) parameter"
-                ));
-            }
-        }
+        let aes_secret = match data {
+            Some(d) => Some(d.to_string()),
+            None => None,
+        };
 
         let aes_secret = match aes_secret {
             Some(data) => data,
             None => {
-                panic!("AES_GCM_SECRET os ENV must present or fill the Client::new(secret) parameter")
+                let env = std::env::var("AES_GCM_SECRET").expect(
+                    "if you are not using parameter, AES_GCM_SECRET os ENV must present or fill the Client::new(secret) parameter"
+                );
+                env
             }
         };
 
@@ -412,5 +407,17 @@ mod tests {
         let encrypted = client.encrypt("my thing", None);
         let decrypted: String = client.decrypt(&encrypted.unwrap()).unwrap();
         assert_eq!(decrypted, "my thing");
+    }
+
+    ///
+    /// Test case 9
+    /// no secret and no env
+    ///
+    #[test]
+    #[should_panic]
+    fn test_case_9() {
+        std::env::remove_var("AES_GCM_SECRET");
+        // expect it to be panic
+        Client::new(None);
     }
 }
