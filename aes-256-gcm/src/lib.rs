@@ -100,7 +100,7 @@ impl Client {
             Some(data) => data.to_string(),
             None => std::env::var("AES_GCM_SECRET").map_err(|_|
                 "if you are not using parameter, AES_GCM_SECRET os ENV must present or fill the Client::new(secret) parameter".to_string()
-            )?  // Convert it into String
+            )?
         };
 
         let mut aes_secret = aes_secret.into_bytes();
