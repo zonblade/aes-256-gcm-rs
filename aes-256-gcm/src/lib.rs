@@ -75,9 +75,6 @@ pub struct Client {
 }
 
 impl Client {
-    #[deprecated(
-        note = "Use `try_new` instead for a non-panicking version."
-    )]
     pub fn new<'a>(secret: impl Into<Option<&'a str>>) -> Self {
         let aes_secret: String = match secret.into() {
             Some(data) => data.to_string(),
