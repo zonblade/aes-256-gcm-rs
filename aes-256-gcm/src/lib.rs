@@ -76,34 +76,37 @@ pub struct Client {
 
 impl Client {
     pub fn new<'a>(secret: impl Into<Option<&'a str>>) -> Self {
-        let data: Option<&'a str> = secret.into();
-
-        let aes_secret = match data {
-            Some(d) => Some(d.to_string()),
-            None => None,
+        let aes_secret: String = match secret.into() {
+            Some(data) => data.to_string(),
+            None => std::env::var("AES_GCM_SECRET").expect(
+                "if you are not using parameter, AES_GCM_SECRET os ENV must present or fill the Client::new(secret) parameter"
+            )
         };
 
-        let aes_secret = match aes_secret {
-            Some(data) => data,
-            None => {
-                let env = std::env::var("AES_GCM_SECRET").expect(
-                    "if you are not using parameter, AES_GCM_SECRET os ENV must present or fill the Client::new(secret) parameter"
-                );
-                env
-            }
-        };
+        let mut aes_secret = aes_secret.into_bytes();
+        const AES_256_KEY_LENGTH: usize = 32;
+        aes_secret.resize(AES_256_KEY_LENGTH, 0);
 
-        let mut aes_secret = aes_secret.as_bytes().to_vec();
-        if aes_secret.len() > 32 {
-            aes_secret.truncate(32);
-        } else {
-            while aes_secret.len() < 32 {
-                aes_secret.push(0);
-            }
-        }
         let aes_key = GenericArray::from_slice(&aes_secret);
         let client: AesClient = Aes256Gcm::new(&aes_key);
         Self { client }
+    }
+
+    pub fn try_new<'a>(secret: impl Into<Option<&'a str>>) -> Result<Self, String> {
+        let aes_secret = match secret.into() {
+            Some(data) => data.to_string(),
+            None => std::env::var("AES_GCM_SECRET").map_err(|_|
+                "if you are not using parameter, AES_GCM_SECRET os ENV must present or fill the Client::new(secret) parameter".to_string()
+            )?
+        };
+
+        let mut aes_secret = aes_secret.into_bytes();
+        const AES_256_KEY_LENGTH: usize = 32;
+        aes_secret.resize(AES_256_KEY_LENGTH, 0);
+
+        let aes_key = GenericArray::from_slice(&aes_secret);
+        let client: AesClient = Aes256Gcm::new(&aes_key);
+        Ok(Self { client })
     }
 
     pub fn encrypt<T>(
@@ -246,6 +249,8 @@ fn main() {}
 
 #[cfg(test)]
 mod tests {
+    #![allow(deprecated)]
+
     use super::*;
 
     ///
@@ -411,7 +416,7 @@ mod tests {
 
     ///
     /// Test case 9
-    /// no secret and no env
+    /// no secret and no env using new
     ///
     #[test]
     #[should_panic]
@@ -419,5 +424,20 @@ mod tests {
         std::env::remove_var("AES_GCM_SECRET");
         // expect it to be panic
         Client::new(None);
+    }
+
+    ///
+    /// Test case 10
+    /// no secret and no env using try_new
+    ///
+    #[test]
+    fn test_case_10() {
+        std::env::remove_var("AES_GCM_SECRET");
+        // expect it to be not panic
+        let client = Client::try_new(None);
+        assert!(client.is_err(), "Expected an error when no secret or env var is set");
+        if let Err(e) = client {
+            assert_eq!(e, "if you are not using parameter, AES_GCM_SECRET os ENV must present or fill the Client::new(secret) parameter");
+        }
     }
 }
