@@ -93,7 +93,11 @@ impl Client {
             }
         };
 
-        let mut aes_secret = aes_secret.as_bytes().to_vec();
+        Client::new_from_bytes(&aes_secret.as_bytes())
+    }
+
+    pub fn new_from_bytes(secret: &[u8]) -> Self {
+        let mut aes_secret = secret.to_vec();
         if aes_secret.len() > 32 {
             aes_secret.truncate(32);
         } else {
@@ -419,5 +423,19 @@ mod tests {
         std::env::remove_var("AES_GCM_SECRET");
         // expect it to be panic
         Client::new(None);
+    }
+
+    ///
+    /// Test case 10
+    /// new client using secret from bytes
+    ///
+    #[test]
+    fn test_case_10() {
+        std::env::remove_var("AES_GCM_SECRET");
+        let secrets: [u8; 32] = [243, 89, 26, 18, 104, 222, 151, 114, 149, 177, 188, 237, 78, 240, 235, 67, 242, 132, 52, 160, 115, 232, 237, 119, 168, 81, 90, 176, 110, 3, 184, 236];
+        let client = Client::new_from_bytes(&secrets);
+        let encrypted = client.encrypt("my thing", None);
+        let decrypted: String = client.decrypt(&encrypted.unwrap()).unwrap();
+        assert_eq!(decrypted, "my thing");
     }
 }
